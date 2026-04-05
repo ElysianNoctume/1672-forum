@@ -1,0 +1,36 @@
+name: GitHub API Proxy
+on:
+  workflow_dispatch: # 允许手动触发
+  schedule:
+    - cron: '*/5 * * * *' # 每 5 分钟自动更新一次
+
+jobs:
+  update-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Fetch GitHub API data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          # 获取 issues 列表
+          curl -H "Authorization: token $GITHUB_TOKEN" \
+               -H "Accept: application/vnd.github.v3+json" \
+               "https://api.github.com/repos/ElysianNoct/167/issues" \
+               > issues.json
+
+          # 获取评论（可选，根据你的需求）
+          # curl -H "Authorization: token $GITHUB_TOKEN" \
+          #      -H "Accept: application/vnd.github.v3+json" \
+          #      "https://api.github.com/repos/ElysianNoct/167/issues/comments" \
+          #      > comments.json
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add issues.json
+          git commit -m "Update proxy data $(date)" || echo "No changes to commit"
+          git push
